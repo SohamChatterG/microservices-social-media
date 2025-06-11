@@ -54,7 +54,7 @@ const proxyOptions = {
 // identity-service
 app.use(
     "/v1/auth",
-    proxy(process.env.IDENTITY_SERVICE_URL, {
+    proxy(process.env.IDENTITY_SERVICE_URL, { // The host(localhost etc) and PORT are replaced by the proxy middleware // The path /v1/auth... are resolved by (as u can see in the proxyOptions).
         ...proxyOptions,
         proxyReqOptDecorator: (proxyReqOpts, srcReq) => { // used tp add headers in request body
             proxyReqOpts.headers["Content-Type"] = "application/json";
