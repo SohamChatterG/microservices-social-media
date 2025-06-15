@@ -4,14 +4,17 @@ const mongoose = require("mongoose");
 const Redis = require("ioredis");
 const cors = require("cors");
 const helmet = require("helmet");
-const postRoutes = require("./routes/post-route");
 const errorHandler = require("./middlewares/errorHandler");
 const logger = require("./utils/logger");
-const { connectToRabbitMQ } = require("./utils/rabbitmq");
-const { consumeEvent } = require("../../media-service/src/utils/rabbitmq");
+const { connectToRabbitMQ, consumeEvent } = require("./utils/rabbitmq");
+const searchRoutes = require("./routes/search-routes");
+const {
+    handlePostCreated,
+    handlePostDeleted,
+} = require("./eventHandlers/search-event-handler");
 
 const app = express();
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3004;
 
 //connect to mongodb
 mongoose
@@ -28,20 +31,11 @@ app.use(express.json());
 
 app.use((req, res, next) => {
     logger.info(`Received ${req.method} request to ${req.url}`);
-    logger.info(`Request body, ${JSON.stringify(req.body)}`);
+    logger.info(`Request body, ${req.body}`);
     next();
 });
 
-
-//routes -> pass redisclient to routes
-app.use(
-    "/api/posts",
-    (req, res, next) => {
-        req.redisClient = redisClient;
-        next();
-    },
-    postRoutes
-);
+app.use("/api/search", searchRoutes);
 
 app.use(errorHandler);
 
@@ -49,20 +43,17 @@ async function startServer() {
     try {
         await connectToRabbitMQ();
 
-        await consumeEvent('post.delete');
+        //consume the events / subscribe to the events
+        await consumeEvent("post.created", handlePostCreated);
+        await consumeEvent("post.deleted", handlePostDeleted);
+
         app.listen(PORT, () => {
-            logger.info(`Post service running on port ${PORT}`);
+            logger.info(`Search service is running on port: ${PORT}`);
         });
-    } catch (error) {
-        logger.error("Failed to connect to server", error);
+    } catch (e) {
+        logger.error(e, "Failed to start search service");
         process.exit(1);
     }
 }
 
 startServer();
-
-//unhandled promise rejection
-
-process.on("unhandledRejection", (reason, promise) => {
-    logger.error("Unhandled Rejection at", promise, "reason:", reason);
-});

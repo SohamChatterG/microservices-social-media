@@ -1,6 +1,6 @@
 const Post = require("../models/post");
 const logger = require("../utils/logger");
-// const { publishEvent } = require("../utils/rabbitmq");
+const { publishEvent } = require("../utils/rabbitmq");
 const { validateCreatePost } = require("../utils/validation");
 
 async function invalidatePostCache(req, input) {
@@ -34,12 +34,12 @@ const createPost = async (req, res) => {
 
         await newlyCreatedPost.save();
 
-        // await publishEvent("post.created", {
-        //     postId: newlyCreatedPost._id.toString(),
-        //     userId: newlyCreatedPost.user.toString(),
-        //     content: newlyCreatedPost.content,
-        //     createdAt: newlyCreatedPost.createdAt,
-        // });
+        await publishEvent("post.created", {
+            postId: newlyCreatedPost._id.toString(),
+            userId: newlyCreatedPost.user.toString(),
+            content: newlyCreatedPost.content,
+            createdAt: newlyCreatedPost.createdAt,
+        });
 
         // We must invalidate the existing cache which stores old posts when we create a new post
         await invalidatePostCache(req, newlyCreatedPost._id.toString());
@@ -144,7 +144,7 @@ const deletePost = async (req, res) => {
             _id: req.params.id,
             user: req.user.userId,
         });
-
+        console.log(post)
         if (!post) {
             return res.status(404).json({
                 message: "Post not found",
@@ -152,7 +152,7 @@ const deletePost = async (req, res) => {
             });
         }
 
-        //publish post delete method ->
+        // publish post delete method ->
         await publishEvent("post.deleted", {
             postId: post._id.toString(),
             userId: req.user.userId,
@@ -164,7 +164,7 @@ const deletePost = async (req, res) => {
             message: "Post deleted successfully",
         });
     } catch (e) {
-        logger.error("Error deleting post", error);
+        logger.error("Error deleting post", e);
         res.status(500).json({
             success: false,
             message: "Error deleting post",
