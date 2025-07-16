@@ -1,12 +1,12 @@
 name: Deploy to VPS
 
 on:
-  pull_request:
+  push:
     branches:
       - main
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
