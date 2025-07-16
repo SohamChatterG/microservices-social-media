@@ -36,11 +36,12 @@ app.use((req, res, next) => {
     logger.info(`Received ${req.method} request to send ${req.url}`);
     logger.info(`Request body: ${JSON.stringify(req.body)}`);
     next();
+
 });
 
 const proxyOptions = {
     proxyReqPathResolver: (req) => { // used to changed the requested path
-        return req.originalUrl.replace(/^\/v1/, "/api")
+        return req.originalUrl.replace(/^\/v1/, "/api") //         // Replace "/v1" prefix with "/api" when forwarding to the backend service
     },
     proxyErrorHandler: (err, res, next) => {
         logger.error(`Proxy error ${err.message}`);
@@ -56,7 +57,9 @@ app.use(
     "/v1/auth",
     proxy(process.env.IDENTITY_SERVICE_URL, { // The host(localhost etc) and PORT are replaced by the proxy middleware // The path /v1/auth... are resolved by (as u can see in the proxyOptions).
         ...proxyOptions,
-        proxyReqOptDecorator: (proxyReqOpts, srcReq) => { // used tp add headers in request body
+        // proxyReqOpts: the HTTP request options going to the microservice (like headers, method, etc.).
+        // srcReq: the original incoming request from the client to your API Gateway.
+        proxyReqOptDecorator: (proxyReqOpts, srcReq) => { // used to add headers in request body
             proxyReqOpts.headers["Content-Type"] = "application/json";
             return proxyReqOpts;
         },
@@ -65,7 +68,7 @@ app.use(
                 `Response received from Identity service: ${proxyRes.statusCode}`
             );
 
-            return proxyResData;
+            return proxyResData; // returns data to client
         },
     })
 );
@@ -74,8 +77,8 @@ app.use(
 app.use('/v1/posts', validateToken, proxy(process.env.POST_SERVICE_URL, {
     ...proxyOptions,
     proxyReqOptDecorator: (proxyReqOpts, srcReq) => { // used tp add headers in request body
-        proxyReqOpts.headers["Content-Type"] = "application/json";
-        proxyReqOpts.headers["x-user-id"] = srcReq.user.userId;
+        proxyReqOpts.headers["content-type"] = "application/json";
+        proxyReqOpts.headers["x-user-id"] = srcReq.user.userId; // Inject user ID from validated token
 
         return proxyReqOpts;
     },
@@ -106,7 +109,8 @@ app.use('/v1/media', validateToken, proxy(process.env.MEDIA_SERVICE_URL, {
         return proxyResData;
 
     },
-    parseReqBody: false
+    // Disables body parsing to allow raw streams
+    parseReqBody: false // // Required for handling raw file streams (like uploads)
 
 }))
 

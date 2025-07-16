@@ -12,7 +12,7 @@ const router = express.Router();
 
 //configure multer for file upload
 const upload = multer({
-    storage: multer.memoryStorage(),
+    storage: multer.memoryStorage(), // 👈 THIS is the key part
     limits: {
         fileSize: 5 * 1024 * 1024, // 5 mb
     },
@@ -22,7 +22,9 @@ router.post(
     "/upload",
     authenticateRequest,
     (req, res, next) => {
-        upload(req, res, function (err) {
+        upload(req, res, function (err) { // This is called a custom invocation of middleware, instead of just app.use(upload).
+            // Because you're handling Multer-specific errors (MulterError, no file, etc.) in one place.
+            // After successful upload, req.file is available and next() is called to move to uploadMedia    
             if (err instanceof multer.MulterError) {
                 logger.error("Multer error while uploading:", err);
                 return res.status(400).json({

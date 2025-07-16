@@ -8,7 +8,7 @@ const postRoutes = require("./routes/post-route");
 const errorHandler = require("./middlewares/errorHandler");
 const logger = require("./utils/logger");
 const { connectToRabbitMQ } = require("./utils/rabbitmq");
-const { consumeEvent } = require("../../media-service/src/utils/rabbitmq");
+// const { consumeEvent } = require("../../media-service/src/utils/rabbitmq");
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -49,7 +49,7 @@ async function startServer() {
     try {
         await connectToRabbitMQ();
 
-        await consumeEvent('post.delete');
+        // await consumeEvent('post.delete');
         app.listen(PORT, () => {
             logger.info(`Post service running on port ${PORT}`);
         });
