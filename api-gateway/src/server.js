@@ -28,7 +28,7 @@ const rateLimiter = rateLimit({
     store: new RedisStore({
         sendCommand: (...args) => redisClient.call(...args),
     })
-})
+});
 
 
 app.use(rateLimiter)
