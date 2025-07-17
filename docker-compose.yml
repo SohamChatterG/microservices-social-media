@@ -43,6 +43,7 @@ services:
 
   search-service:
     build: ./search-service
+    image: soham54/search-service
     env_file: ./search-service/.env
     depends_on:
       - redis
