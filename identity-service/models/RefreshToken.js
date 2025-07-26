@@ -1,16 +1,26 @@
-const express = require("express");
-const {
-    resgiterUser,
-    loginUser,
-    refreshTokenUser,
-    logoutUser,
-} = require("../controllers/identity-controller");
+const mongoose = require("mongoose");
 
-const router = express.Router();
+const refreshTokenSchema = new mongoose.Schema(
+  {
+    token: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    expiresAt: {
+      type: Date,
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
 
-router.post("/register", resgiterUser);
-router.post("/login", loginUser);
-router.post("/refresh-token", refreshTokenUser);
-router.post("/logout", logoutUser);
+refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-module.exports = router;
+const RefreshToken = mongoose.model("RefreshToken", refreshTokenSchema);
+module.exports = RefreshToken;
